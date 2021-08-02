@@ -50,10 +50,42 @@ function getCroppedImg(image, crop, fileName) {
     // });
   }
 
-  
-function MainPage() {
+function cropRequestOptionFull(image_file, crop_w, crop_h) {
+    var formdata = new FormData();
+    formdata.append("input", image_file);
+    formdata.append("crop_w", crop_w);
+    formdata.append("crop_h", crop_h);
 
-    const [ssState, setssState] = useState({'ssImg':`data:image/png;base64,${DEMO_B64}`, 'peaks':{x:137, y:69, x1:91, y1: 12, x2:97, y2: 176}})
+    var requestOptions = {
+        method: 'POST',
+        body: formdata,
+      };
+    return requestOptions
+}
+
+function cropRequestOptionSS(segsalb64, peak_bb, img_w, img_h, crop_w, crop_h) {
+    var data = {
+        "sal_seg": segsalb64,
+        "peak_bb": peak_bb,
+        "img_w": img_w,
+        "img_h": img_h,
+        "crop_w": crop_w,
+        "crop_h": crop_h,
+    }
+
+    var requestOptions = {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+            "Content-Type": "application/json"
+          },
+      };
+    return requestOptions
+}
+
+
+function MainPage() {
+    const [ssState, setssState] = useState({'ssImg':`data:image/png;base64,${DEMO_B64}`, 'peaks_bb':[{"peak": [137,69], "rect": [91,12,97,176]}] })
     const [results, setsResults] = useState([[0.02313090875122586, [137, 22, 387, 322]]])
     const [resultsImg, setsResultsImg] = useState([])
 
@@ -81,7 +113,7 @@ function MainPage() {
       }, [files]);
 
     useEffect(() => {
-        console.log("EFFECT");
+        if (!debug) { return }
         window.Caman(`#SEG`, ssState.ssImg, function () {
             this["channel2"](0);
             this.render();
@@ -111,11 +143,30 @@ function MainPage() {
 
 
     const cropClicked = () => {
+
         setBtnLoadingState(true)
-        // make asynchronous call
-        setTimeout(() => {
-            setBtnLoadingState(false)
-        }, 3000)
+
+        if (ssState.ssImg) {
+            var img_w = files[0] && files[0].width
+            var img_h = files[0] && files[0].height
+            var opt = cropRequestOptionSS(ssState.ssImg, ssState.peaks_bb, img_w, img_h, width, height)
+            fetch('http://localhost:5000/sscrop', opt)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data)
+                setBtnLoadingState(false)
+            })
+        } else {
+            var opt = cropRequestOptionFull(files[0].file, width, height)
+            fetch('http://localhost:5000/sspredict', opt)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data)
+                setBtnLoadingState(false)
+            })
+        }
+
+        
       }
 
     const res2crop = (res) => {
@@ -127,7 +178,6 @@ function MainPage() {
             x: x1,
             y: y1
         }
-        console.log(crop)
         return crop
     }
 
