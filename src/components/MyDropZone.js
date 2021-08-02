@@ -1,5 +1,4 @@
 import React, {useMemo} from 'react';
-import { useState, useEffect } from 'react';
 import {useDropzone} from 'react-dropzone';
 import {Image as BSImage} from 'react-bootstrap'
 import reactImageSize from 'react-image-size';
@@ -41,10 +40,10 @@ function MyDropZone({files, setFiles}) {
     isDragAccept
   ]);
 
-  const preview = files.map(file => (
-    <div style={thumb} key={file.name}>
+  const preview = files.map((file, i)=> (
+    <div key={file.name} style={thumb} >
       <div style={thumbInner}>
-      <BSImage src={file.preview} fluid />
+      <BSImage id={"SRC"} src={file.preview} fluid />
         <p style={thumbDim}> {file.width} x {file.height}</p>
       </div>
     </div>
