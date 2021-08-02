@@ -3,7 +3,6 @@ import { Container, Row, Col, Button, Spinner, Image, FormCheck } from 'react-bo
 import MyDropZone from '../components/MyDropZone'
 import InputSlider from '../components/Slider'
 import cat from '../img/cat.jpeg'
-import ReactCrop from 'react-image-crop';
 import DEMO_B64 from '../img/demoSalSeg'
 
 function getCroppedImg(image, crop, fileName) {
@@ -86,7 +85,7 @@ function cropRequestOptionSS(segsalb64, peak_bb, img_w, img_h, crop_w, crop_h) {
 
 function MainPage() {
     const [ssState, setssState] = useState({'ssImg':`data:image/png;base64,${DEMO_B64}`, 'peaks_bb':[{"peak": [137,69], "rect": [91,12,97,176]}] })
-    const [results, setsResults] = useState([[0.02313090875122586, [137, 22, 387, 322]]])
+    const [results, setsResults] = useState([{ 'score':0.02313090875122586, 'rect':[137, 22, 387, 322]}])
     const [resultsImg, setsResultsImg] = useState([])
 
     const [files, setFiles] = useState([{
@@ -97,13 +96,20 @@ function MainPage() {
     }]);
     const [width, setWidth] = useState(250);
     const [height, setHeight] = useState(300);
+    const [time, setTime] = useState(0);
     const [btnLoadingState, setBtnLoadingState] = useState(false)
     const [debug, setDebug] = useState(false)
 
     const onNewImageDrop = (newState) => {
         setFiles(newState)
-        setWidth(0)
-        setHeight(0)
+        setssState({})
+        setsResults([])
+        setsResultsImg([])
+        setTime(0)
+        var w = (newState[0] && newState[0].width) || 1
+        var h = (newState[0] && newState[0].height) || 1
+        setWidth(Math.round(w / 2))
+        setHeight(Math.round(h / 2))
     }
 
     
@@ -132,11 +138,10 @@ function MainPage() {
                 const image = document.getElementById('SRC')
                 const croppedImg = await getCroppedImg(image, res2crop(res), "res"+i+".jpeg")
                 return {
-                    score: res[0], 
+                    score: res.score, 
                     img: croppedImg,
                 }
             })).then( (res) => {
-                console.log(res)
                 setsResultsImg(res)
             })
     }, [results])
@@ -154,6 +159,15 @@ function MainPage() {
             .then(response => response.json())
             .then(data => {
                 console.log(data)
+                if (data.err) {
+                    window.alert(data.err);
+                } else {
+                    setsResults(data.results)
+                    setTime(data.time)
+                }
+                setBtnLoadingState(false)
+            }).catch(err => {
+                console.log(err)
                 setBtnLoadingState(false)
             })
         } else {
@@ -161,7 +175,17 @@ function MainPage() {
             fetch('http://localhost:5000/sspredict', opt)
             .then(response => response.json())
             .then(data => {
-                console.log(data)
+                // console.log(data)
+                if (data.err) {
+                    window.alert(data.err);
+                } else {
+                    setssState({'ssImg':`data:image/png;base64,${data.sal_seg}`, 'peaks_bb':data.peaks_bb })
+                    setsResults(data.results)
+                    setTime(data.time)
+                }
+                setBtnLoadingState(false)
+            }).catch(err => {
+                console.log(err)
                 setBtnLoadingState(false)
             })
         }
@@ -170,7 +194,7 @@ function MainPage() {
       }
 
     const res2crop = (res) => {
-        var [x1,y1,x2,y2] = res[1]  
+        var [x1,y1,x2,y2] = res.rect 
         var crop ={
             unit: 'px',
             width: x2-x1,
@@ -185,12 +209,14 @@ function MainPage() {
         return (
             <Row>
                 {resultsImg.map((res, i) => 
-                    <Col key={"RES"+i} xs={4}>
+                    <Col key={"RES"+i} xs={4} >
                         <p class="text-center">{res.score}</p>
-                        <Image id={"RES"+i}
-                            fluid
-                            src={res.img} 
-                        />
+                        <div style={imageCellStyle}>
+                            <Image id={"RES"+i}
+                                fluid
+                                src={res.img} 
+                            />
+                        </div>
                     </Col>
                     )
                 }
@@ -237,7 +263,10 @@ function MainPage() {
                 <FormCheck inline label="debug" checked={debug} onChange={(e) => setDebug(e.target.checked)}/>
                 </Col>
             </Row>
-
+            
+            <Row>
+            <p class="text-center">Time Taken: {time.toFixed(5)} sec</p>
+            </Row>
             { debug && 
             <div>
                 <Row >
