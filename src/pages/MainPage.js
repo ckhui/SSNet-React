@@ -19,7 +19,8 @@ function getCroppedImg(image, crop, fileName) {
     canvas.height = crop.height * pixelRatio;
     ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     ctx.imageSmoothingQuality = "high";
-  
+
+
     ctx.drawImage(
       image,
       crop.x * scaleX,
@@ -139,6 +140,7 @@ function MainPage() {
                 const croppedImg = await getCroppedImg(image, res2crop(res), "res"+i+".jpeg")
                 return {
                     score: res.score, 
+                    rect: res.rect,
                     img: croppedImg,
                 }
             })).then( (res) => {
@@ -217,6 +219,7 @@ function MainPage() {
                                 src={res.img} 
                             />
                         </div>
+                        <p class="text-center">XYXY: ({res.rect.join(",")})</p>
                     </Col>
                     )
                 }
