@@ -158,7 +158,7 @@ function MainPage() {
             var img_w = files[0] && files[0].width
             var img_h = files[0] && files[0].height
             opt = cropRequestOptionSS(ssState.ssImg, ssState.peaks_bb, img_w, img_h, width, height)
-            fetch('http://localhost:5000/sscrop', opt)
+            fetch('/api/sscrop', opt)
             .then(response => response.json())
             .then(data => {
                 console.log(data)
@@ -176,7 +176,7 @@ function MainPage() {
             })
         } else {
             opt = cropRequestOptionFull(files[0].file, width, height)
-            fetch('http://localhost:5000/sspredict', opt)
+            fetch('/api/sspredict', opt)
             .then(response => response.json())
             .then(data => {
                 // console.log(data)
