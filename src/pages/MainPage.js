@@ -152,11 +152,12 @@ function MainPage() {
     const cropClicked = () => {
 
         setBtnLoadingState(true)
+        var opt
 
         if (ssState.ssImg) {
             var img_w = files[0] && files[0].width
             var img_h = files[0] && files[0].height
-            var opt = cropRequestOptionSS(ssState.ssImg, ssState.peaks_bb, img_w, img_h, width, height)
+            opt = cropRequestOptionSS(ssState.ssImg, ssState.peaks_bb, img_w, img_h, width, height)
             fetch('http://localhost:5000/sscrop', opt)
             .then(response => response.json())
             .then(data => {
@@ -170,10 +171,11 @@ function MainPage() {
                 setBtnLoadingState(false)
             }).catch(err => {
                 console.log(err)
+                window.alert(err);
                 setBtnLoadingState(false)
             })
         } else {
-            var opt = cropRequestOptionFull(files[0].file, width, height)
+            opt = cropRequestOptionFull(files[0].file, width, height)
             fetch('http://localhost:5000/sspredict', opt)
             .then(response => response.json())
             .then(data => {
@@ -188,6 +190,7 @@ function MainPage() {
                 setBtnLoadingState(false)
             }).catch(err => {
                 console.log(err)
+                window.alert(err);
                 setBtnLoadingState(false)
             })
         }
@@ -249,6 +252,7 @@ function MainPage() {
                 <Button 
                     variant="primary" 
                     onClick={cropClicked}
+                    disabled={btnLoadingState}
                     >
                 { btnLoadingState && <Spinner
                         as="span"
